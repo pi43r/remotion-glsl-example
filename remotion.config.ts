@@ -5,7 +5,9 @@
  * All configuration options: https://remotion.dev/docs/config
  */
 
-import {Config} from '@remotion/cli/config';
+import { Config } from '@remotion/cli/config'
+import { enableGlsl } from './src/enable.glsl'
 
-Config.setChromiumOpenGlRenderer('angle');
-Config.setVideoImageFormat('jpeg');
+Config.overrideWebpackConfig(enableGlsl)
+Config.setChromiumOpenGlRenderer('angle')
+Config.setVideoImageFormat('jpeg')

@@ -1,5 +1,13 @@
 {
 	"editor.tabSize": 2,
 	"typescript.tsdk": "node_modules/typescript/lib",
-	"typescript.enablePromptUseWorkspaceTsdk": true
+	"typescript.enablePromptUseWorkspaceTsdk": true,
+	"workbench.colorCustomizations": {
+		"[graygraygray]": {
+			"activityBar.background": "#000000"
+		},
+		"activityBar.background": "#292A50",
+		"titleBar.activeBackground": "#3A3A6F",
+		"titleBar.activeForeground": "#FAFAFC"
+	}
 }

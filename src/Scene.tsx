@@ -1,62 +1,57 @@
-import { staticFile } from "remotion";
-import { getVideoMetadata, VideoMetadata } from "@remotion/media-utils";
-import { ThreeCanvas, useVideoTexture } from "@remotion/three";
-import React, { useEffect, useRef, useState } from "react";
-import { AbsoluteFill, useVideoConfig, Video } from "remotion";
-import { Phone } from "./Phone";
-import { z } from "zod";
-import { zColor } from "@remotion/zod-types";
+import { interpolate, useCurrentFrame } from 'remotion'
+import { ThreeCanvas } from '@remotion/three'
+import * as THREE from 'three'
+import React, { useRef, useMemo } from 'react'
+import { AbsoluteFill, useVideoConfig } from 'remotion'
+import { z } from 'zod'
+import fragmentShader from './shader/basicFragmentShader.glsl'
+import vertexShader from './shader/basicVertexShader.glsl'
 
 const container: React.CSSProperties = {
-  backgroundColor: "white",
-};
+	backgroundColor: '#EFEFEF',
+}
 
-const videoStyle: React.CSSProperties = {
-  position: "absolute",
-  opacity: 0,
-};
+export const myCompSchema = z.object({})
 
-export const myCompSchema = z.object({
-  phoneColor: zColor(),
-  deviceType: z.enum(["phone", "tablet"]),
-});
-
-type MyCompSchemaType = z.infer<typeof myCompSchema>;
+type MyCompSchemaType = z.infer<typeof myCompSchema>
 
 export const Scene: React.FC<
-  {
-    baseScale: number;
-  } & MyCompSchemaType
-> = ({ baseScale, phoneColor, deviceType }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const { width, height } = useVideoConfig();
-  const [videoData, setVideoData] = useState<VideoMetadata | null>(null);
+	{
+		baseScale: number
+	} & MyCompSchemaType
+> = ({ baseScale }) => {
+	const meshRef = useRef<THREE.Mesh>(null!)
+	const { width, height } = useVideoConfig()
+	const frame = useCurrentFrame()
+	const { durationInFrames } = useVideoConfig()
+	console.log({ fragmentShader, vertexShader })
 
-  const videoSrc =
-    deviceType === "phone" ? staticFile("phone.mp4") : staticFile("tablet.mp4");
+	const constantRotation = interpolate(frame, [0, durationInFrames], [0, Math.PI * 6])
 
-  useEffect(() => {
-    getVideoMetadata(videoSrc)
-      .then((data) => setVideoData(data))
-      .catch((err) => console.log(err));
-  }, [videoSrc]);
+	const uniforms = useMemo(
+		() => ({
+			iTime: {
+				type: 'f',
+				value: 1.0,
+			},
+			iResolution: {
+				type: 'v2',
+				value: new THREE.Vector2(4, 3),
+			},
+		}),
+		[]
+	)
 
-  const texture = useVideoTexture(videoRef);
-  return (
-    <AbsoluteFill style={container}>
-      <Video ref={videoRef} src={videoSrc} style={videoStyle} />
-      {videoData ? (
-        <ThreeCanvas linear width={width} height={height}>
-          <ambientLight intensity={1.5} color={0xffffff} />
-          <pointLight position={[10, 10, 0]} />
-          <Phone
-            phoneColor={phoneColor}
-            baseScale={baseScale}
-            videoTexture={texture}
-            aspectRatio={videoData.aspectRatio}
-          />
-        </ThreeCanvas>
-      ) : null}
-    </AbsoluteFill>
-  );
-};
+	return (
+		<AbsoluteFill style={container}>
+			<ThreeCanvas linear width={width} height={height}>
+				<ambientLight intensity={1.5} color={0xffffff} />
+				<pointLight position={[10, 10, 0]} />
+				<mesh ref={meshRef} rotation={[0, constantRotation, 0]} scale={baseScale}>
+					<boxGeometry args={[1, 1, 1]} />
+					<shaderMaterial uniforms={uniforms} vertexShader={vertexShader} fragmentShader={fragmentShader} />
+				</mesh>
+			</ThreeCanvas>
+		</AbsoluteFill>
+	)
+}
